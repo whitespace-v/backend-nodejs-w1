@@ -17,25 +17,26 @@ export class ProductActor {
             res.json(Responder.internal())
         }
     }
-    // products/all?asc=false&filter=price&checked=1,2,3
-    static async getProducts(req: Request, res: Response) { x
+
+    static async getProducts(req: Request, res: Response) { 
         try {
             let {asc, filter, checked} = req.query
             if (checked && filter && asc) {
-                checked = checked.toString().split(',') // "1,2,3" -> [2]
                 let bool_asc = "true" === asc.toString() // "false" -> boolean
-               
                 const products = await Pool.conn.product.findMany({
                     where: {
-                        OR: [
-                            checked.map(i => ({type: parseInt(i.toString())})) 
-                        ]
+                        type: {
+                            some: {
+                                id: { in: checked.toString().split(',').map(Number) }
+                            }
+                        }
                     },
                     orderBy : [
                         filter === "price" ? 
                             {price: bool_asc ? "asc" : "desc"} : 
                             {id: bool_asc ? "asc" : "desc"}
                         ] 
+                   
                 })
                 res.json(Responder.ok({products}))
             } else{
@@ -45,6 +46,23 @@ export class ProductActor {
         } catch (error) {
             console.log(error.message)
             res.json(Responder.internal())
+        }
+    }
+    static async createBasketItem(req: Request, res: Response){
+        try {
+            const {user_id, product_id, count} = req.body
+            const basketItem = await Pool.conn.basketItem.create({
+                data: {user_id, product_id, count}
+            })
+            if (basketItem) {
+                res.json(Responder.ok({"message": "The product was added to basket"}))
+            } else {
+                res.json(Responder.not_found())
+            }
+            
+         } catch (error) {
+            console.log(error.message);
+            res.json(Responder.internal)
         }
     }
 }

@@ -12,3 +12,5 @@ productRouter.get(
     '/all',
     ProductActor.getProducts
 )
+
+productRouter.post('/add_to_basket', ProductActor.createBasketItem)
